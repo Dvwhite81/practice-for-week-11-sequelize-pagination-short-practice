@@ -12,18 +12,29 @@ const { Musician, Band, Instrument } = require('./db/models');
 // Express using json - DO NOT MODIFY
 app.use(express.json());
 
+// BONUS: DRY middleware
+let limit, offset;
+
+app.use((req, res, next) => {
+    const size  = (req.query.size) ? Number(req.query.size) : 5;
+    const page = (req.query.page) ? Number(req.query.page) : 1;
+
+    limit = (size === 0 || page === 0) ? null : size;
+    offset = (size === 0 || page === 0) ? 0 :size * (page - 1);
+    next();
+});
+
 
 app.get('/musicians', async (req, res, next) => {
     // Parse the query params, set default values, and create appropriate
     // offset and limit values if necessary.
-    // Your code here
-    
+
     // Query for all musicians
     // Include attributes for `id`, `firstName`, and `lastName`
     // Include associated bands and their `id` and `name`
     // Order by musician `lastName` then `firstName`
-    const musicians = await Musician.findAll({ 
-        order: [['lastName'], ['firstName']], 
+    const musicians = await Musician.findAll({
+        order: [['lastName'], ['firstName']],
         attributes: ['id', 'firstName', 'lastName'],
         include: [{
             model: Band,
@@ -31,7 +42,8 @@ app.get('/musicians', async (req, res, next) => {
         }],
         // add limit key-value to query
         // add offset key-value to query
-        // Your code here
+        limit: limit,
+        offset: offset
     });
 
     res.json(musicians)
@@ -42,14 +54,13 @@ app.get('/musicians', async (req, res, next) => {
 app.get('/bands', async (req, res, next) => {
     // Parse the query params, set default values, and create appropriate
     // offset and limit values if necessary.
-    // Your code here
-    
+
     // Query for all bands
     // Include attributes for `id` and `name`
     // Include associated musicians and their `id`, `firstName`, and `lastName`
     // Order by band `name` then musician `lastName`
-    const bands = await Band.findAll({ 
-        order: [['name'], [Musician, 'lastName']], 
+    const bands = await Band.findAll({
+        order: [['name'], [Musician, 'lastName']],
         attributes: ['id', 'name'],
         include: [{
             model: Musician,
@@ -58,6 +69,8 @@ app.get('/bands', async (req, res, next) => {
         // add limit key-value to query
         // add offset key-value to query
         // Your code here
+        limit: limit,
+        offset: offset
     });
 
     res.json(bands)
@@ -68,16 +81,15 @@ app.get('/bands', async (req, res, next) => {
 app.get('/instruments', async (req, res, next) => {
     // Parse the query params, set default values, and create appropriate
     // offset and limit values if necessary.
-    // Your code here
-    
+
     // Query for all instruments
     // Include attributes for `id` and `type`
     // Include associated musicians and their `id`, `firstName` and `lastName`
     // Omit the MusicianInstruments join table attributes from the results
     // Include each musician's associated band and their `id` and `name`
     // Order by instrument `type`, then band `name`, then musician `lastName`
-    const instruments = await Instrument.findAll({ 
-        order: [['type'], [Musician, Band, 'name'], [Musician, 'lastName']], 
+    const instruments = await Instrument.findAll({
+        order: [['type'], [Musician, Band, 'name'], [Musician, 'lastName']],
         attributes: ['id', 'type'],
         include: [{
             model: Musician,
@@ -91,7 +103,8 @@ app.get('/instruments', async (req, res, next) => {
         }],
         // add limit key-value to query
         // add offset key-value to query
-        // Your code here
+        limit: limit,
+        offset: offset
     });
 
     res.json(instruments)
